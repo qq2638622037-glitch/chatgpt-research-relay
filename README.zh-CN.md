@@ -4,7 +4,7 @@
 
 ![Research Relay — Master / Worker 上下文隔离研究工作流](research-relay-hero.png)
 
-[English](README.md) · [架构说明](docs/architecture.md) · [示例](examples/task-packet.md) · [Discussions](https://github.com/qq2638622037-glitch/chatgpt-research-relay/discussions)
+[English](README.md) · [安装说明](docs/installation.md) · [架构说明](docs/architecture.md) · [示例](examples/task-packet.md) · [Discussions](https://github.com/qq2638622037-glitch/chatgpt-research-relay/discussions)
 
 [![Release](https://img.shields.io/github/v/release/qq2638622037-glitch/chatgpt-research-relay?display_name=tag\&style=flat-square)](https://github.com/qq2638622037-glitch/chatgpt-research-relay/releases/latest)
 [![License](https://img.shields.io/github/license/qq2638622037-glitch/chatgpt-research-relay?style=flat-square)](LICENSE)
@@ -52,8 +52,10 @@ Research Relay 由两个互相配合的 Skill 组成：
 
 在 Assets 中下载：
 
-* `research-dispatcher-v1.0.0.zip`
-* `research-worker-v1.0.0.zip`
+* `research-dispatcher-v1.1.0.zip`
+* `research-worker-v1.1.0.zip`
+
+真实安装测试已确认：Release 中的原始 ZIP 可以直接上传到 ChatGPT Skills，不需要先改名成 `skill.zip`，也不需要重新压缩。详细步骤见 [`docs/installation.md`](docs/installation.md)。
 
 ## 2. 建立两个不同角色
 
@@ -102,11 +104,13 @@ Worker 只接收当前任务真正需要的信息。
 
 最后，把 Result Envelope 返回 Master。
 
+正常情况下 Master 仍然只做 Result Envelope intake；当 `CONFLICTING`、用户审计或其他规则真的要求打开完整 Artifact 时，v1.1 会优先尝试直接引用。如果跨 Chat / Project 的直接引用不可访问，则可通过确定性文件名 `<task_id>_evidence.md` 在 ChatGPT Library 中定位并校验对应 Artifact，而不是立刻要求用户手工下载再上传。
+
 > **详细研究过程留在 Worker。真正影响项目决策的结果才返回 Master。**
 
 ## 使用要求
 
-当前 V1 面向：
+当前版本面向：
 
 * ChatGPT Projects
 * ChatGPT Skills
@@ -340,6 +344,8 @@ Master 首先读取：
 
 只有需要深入检查时，才进一步打开 Artifact。
 
+v1.1 的 Artifact Resolver 只在 Artifact-read gate 被触发后工作。普通 `COMPLETE`、常规 `PARTIAL`、`BLOCKED` 和 `NO_EVIDENCE` 不会仅仅因为存在 Artifact 就主动搜索 Library。
+
 ---
 
 ## 7. Evidence over claims
@@ -404,7 +410,8 @@ Task Packet 应明确：
 * 必要时把超大任务拆成多个不重叠任务；
 * 接收 Worker 返回的 Result Envelope；
 * 做轻量完整性检查；
-* 只有必要时才读取 Evidence Artifact。
+* 只有必要时才读取 Evidence Artifact；
+* 审计需要 Artifact 且直接引用失效时，优先用确定性文件名通过 ChatGPT Library 恢复，再考虑人工 handoff。
 
 它的原则是：
 
@@ -426,6 +433,7 @@ Task Packet 应明确：
 * 显式记录冲突；
 * 显式记录失败和缺失证据；
 * 创建完整 Evidence Artifact；
+* 保持 `<task_id>_evidence.md` 的确定性命名；
 * 返回简短 Result Envelope。
 
 Worker 不应该自行修改 Master 的项目目标。
@@ -534,7 +542,7 @@ unresolved: []
 recommended_next_action:
   - "下一步建议"
 
-artifact_ref: "完整 Evidence Artifact 的位置"
+artifact_ref: "完整 Evidence Artifact 的位置或确定性文件名"
 ```
 
 Result Envelope 不承担完整论证。
@@ -612,6 +620,8 @@ Master 首先看 Result Envelope。
 - 结果异常；
 - 用户明确要求查看完整依据。
 
+v1.1 的默认恢复顺序是：当前 Chat 中可访问的 `artifact_ref` → 精确 `<task_id>_evidence.md` 的 ChatGPT Library 匹配并校验 task_id / objective → 显式配置的持久 connector → 最后的人工下载 / 上传 fallback。
+
 ---
 
 # 项目结构
@@ -637,13 +647,16 @@ chatgpt-research-relay/
 │
 ├── examples/
 └── docs/
+    ├── installation.md
+    ├── architecture.md
+    └── pressure-tests.md
 ```
 
 ---
 
-# V1 的设计选择
+# 设计选择
 
-Research Relay V1 有意保持简单。
+Research Relay 有意保持简单。
 
 当前核心流程不要求：
 
@@ -656,16 +669,15 @@ Research Relay V1 有意保持简单。
 
 这是有意的设计选择，而不是缺失功能。
 
-V1 首先验证的是：
+当前已经验证的是：
 
-> **Master / Worker 上下文隔离这套工作流本身是否真的有价值。**
+> **Master / Worker 上下文隔离这套工作流可以工作，而且 v1.1 能在需要审计时减少 Artifact 人工搬运。**
 
 未来版本可能根据真实使用反馈加入：
 
 * Task Packet schema validator；
 * Result Envelope validator；
-* Artifact 命名工具；
-* 更完善的自动化；
+* 更完善的自动化 Relay；
 * 可选 Research Auditor；
 * 更多真实案例。
 
@@ -675,7 +687,7 @@ V1 首先验证的是：
 
 # Pressure Tests
 
-V1 在发布前针对以下类型进行了协议级压力测试：
+Research Relay 在发布前针对以下类型进行了协议级压力测试：
 
 1. 简单事实核验；
 2. Master 上下文过大；
@@ -685,6 +697,13 @@ V1 在发布前针对以下类型进行了协议级压力测试：
 6. Worker 返回结果过长；
 7. Worker 历史污染；
 8. Master 轻量结果接收。
+
+此外，v1.1 candidate 已真实回归：
+
+* 两个 Skill 安装；
+* `COMPLETE` Envelope-only，不读 Artifact、不调用 Library Resolver；
+* `CONFLICTING` 跨 Project Artifact 通过 Library 自动恢复，不需要用户手工搬运；
+* `artifact_inputs: []` 时 Worker Context Firewall 继续有效。
 
 测试重点不是：
 
@@ -702,7 +721,7 @@ V1 在发布前针对以下类型进行了协议级压力测试：
 
 # 当前阶段
 
-Research Relay `v1.0.0` 已完成首次公开发布。
+Research Relay `v1.1.0` 已进入正式 Release 准备阶段。
 
 当前已经包括：
 
@@ -711,18 +730,18 @@ Research Relay `v1.0.0` 已完成首次公开发布。
 * Task Packet 协议
 * Result Envelope 协议
 * Evidence Artifact
+* ChatGPT Library Artifact Resolver
 * README
+* 安装说明
 * 架构说明
 * 示例
 * Pressure Tests
 * MIT License
 * Discussions
 
-V1 仍然处于早期阶段。
+核心行为已经完成真实回归，下一条长期路线是：
 
-接下来最重要的不是继续堆功能，而是：
-
-> **真实使用、发现问题、根据实际反馈迭代。**
+> **继续减少 Task Packet / Result Envelope 的手工复制，逐步研究自动 Master → Worker → Master orchestration，同时保持 Context Firewall。**
 
 ---
 
@@ -739,13 +758,13 @@ V1 仍然处于早期阶段。
 * Result Envelope 是太长还是太短？
 * Artifact 是否足够方便审查？
 * 哪些研究任务无法正确完成？
-* 哪些行为应该在 v1.1 改进？
+* Artifact transport 或 orchestration 还有哪些手工摩擦？
 
 **[→ 加入 GitHub Discussions](https://github.com/qq2638622037-glitch/chatgpt-research-relay/discussions)**
 
 真实失败案例尤其有价值。
 
-因为 v1.1 的功能优先级应该来自：
+后续功能优先级应该来自：
 
 1. 真实 E2E 失败；
 2. 用户 Discussion / Issue；
