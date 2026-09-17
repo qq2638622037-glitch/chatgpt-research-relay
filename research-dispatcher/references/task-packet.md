@@ -102,8 +102,11 @@ Recommended defaults:
 
 ### `output_contract`
 
-Default to a Markdown Evidence Artifact plus a compact Result Envelope. Set `artifact_target` to a specific allowed destination only when the user requests one. Keep Google Drive optional; never make it a hidden prerequisite.
+Default to a Markdown Evidence Artifact plus a compact Result Envelope.
 
+Default `artifact_target` to `chat_file`. Change it only when the user explicitly requests another supported destination.
+
+Keep Google Drive optional; never make it a hidden prerequisite.
 ### `stop_conditions`
 
 Always include evidence sufficiency and budget exhaustion. Add task-specific conditions when useful.
