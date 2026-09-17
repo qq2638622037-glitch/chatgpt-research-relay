@@ -17,5 +17,5 @@
 
 Recommended evidence table:
 
-| Claim | Source | Source Type | Date | Supports / Contradicts | Strength | Notes |
+| Claim | Claim Type | Source | Source Type | Date/Version | Supports/Contradicts | Strength | Notes |
 |---|---|---|---|---|---|---|
