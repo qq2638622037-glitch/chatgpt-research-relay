@@ -1,7 +1,7 @@
 # Research Relay
 
 **Keep research context out of your Master chat.**
-
+![Research Relay — context-isolated Master/Worker research workflow](research-relay-hero.png)
 [简体中文](README.zh-CN.md) · [Architecture](docs/architecture.md) · [Examples](examples/task-packet.md)
 
 [![Release](https://img.shields.io/github/v/release/qq2638622037-glitch/chatgpt-research-relay?display_name=tag&style=flat-square)](https://github.com/qq2638622037-glitch/chatgpt-research-relay/releases/latest)
