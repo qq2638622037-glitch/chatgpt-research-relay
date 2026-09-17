@@ -6,7 +6,7 @@
 
 ![Research Relay — context-isolated Master/Worker research workflow](research-relay-hero.png)
 
-[简体中文](README.zh-CN.md) · [Architecture](docs/architecture.md) · [Examples](examples/task-packet.md) · [Discussions](https://github.com/qq2638622037-glitch/chatgpt-research-relay/discussions)
+[简体中文](README.zh-CN.md) · [Installation](docs/installation.md) · [Architecture](docs/architecture.md) · [Examples](examples/task-packet.md) · [Discussions](https://github.com/qq2638622037-glitch/chatgpt-research-relay/discussions)
 
 [![Release](https://img.shields.io/github/v/release/qq2638622037-glitch/chatgpt-research-relay?display_name=tag&style=flat-square)](https://github.com/qq2638622037-glitch/chatgpt-research-relay/releases/latest)
 [![License](https://img.shields.io/github/license/qq2638622037-glitch/chatgpt-research-relay?style=flat-square)](LICENSE)
@@ -39,8 +39,10 @@ Download the latest release:
 
 From **Assets**, download:
 
-- `research-dispatcher-v1.0.0.zip`
-- `research-worker-v1.0.0.zip`
+- `research-dispatcher-v1.1.0.zip`
+- `research-worker-v1.1.0.zip`
+
+The release ZIPs can be uploaded to ChatGPT Skills directly; live installation testing confirmed they do not need to be renamed or re-compressed first. See the [installation guide](docs/installation.md).
 
 ### 2. Set up two project roles
 
@@ -81,6 +83,8 @@ The Worker returns:
 - an **Evidence Artifact** with the detailed research and sources;
 - a concise **Result Envelope** for the Master.
 
+The Master normally intakes only the Result Envelope. When an audit really requires the full Artifact, v1.1 can resolve a generated `<task_id>_evidence.md` through ChatGPT Library if a direct Worker-chat reference does not cross chats or projects.
+
 > Detailed research stays outside the Master conversation. Only the information needed for project decisions comes back.
 
 ### Requirements
@@ -90,6 +94,7 @@ The Worker returns:
 - Two separate project contexts are recommended
 - No ChatGPT Work required
 - No Codex required
+- No Google Drive required
 - No external Agent runtime required
 
 ---
@@ -224,6 +229,7 @@ The goal is better context isolation and cleaner information flow — **not bypa
 - **Old chats and artifacts are not reusable unless explicitly named.**
 - **Detailed evidence goes to an Artifact, not back into the Master chat.**
 - **The Master receives a compact Result Envelope first.**
+- **Full Artifact reads are gated; v1.1 can use Library as an audit fallback instead of forcing manual file transfer.**
 - **Conflicts, missing evidence, and failures are explicit.**
 - **Research is bounded by scope, budget, and stop conditions.**
 
@@ -241,7 +247,8 @@ It:
 - converts the current need into a minimal versioned Task Packet;
 - avoids forwarding the entire project history;
 - splits oversized work when necessary;
-- performs lightweight intake of the Worker's compact result.
+- performs lightweight intake of the Worker's compact result;
+- reads the full Artifact only when audit rules require it, using ChatGPT Library as a cross-chat fallback when needed.
 
 ### `research-worker`
 
@@ -254,11 +261,12 @@ It:
 - researches only the assigned questions;
 - prefers direct and current evidence;
 - records conflicts and missing evidence;
-- creates a detailed Evidence Artifact;
+- creates a detailed Evidence Artifact with deterministic `<task_id>_evidence.md` naming;
 - returns a compact Result Envelope.
 
 See:
 
+- [`docs/installation.md`](docs/installation.md)
 - [`examples/task-packet.md`](examples/task-packet.md)
 - [`examples/result-envelope.md`](examples/result-envelope.md)
 - [`examples/evidence-artifact.md`](examples/evidence-artifact.md)
@@ -350,6 +358,8 @@ An Artifact can contain:
 
 The Master receives the shorter **Result Envelope** first and opens the Artifact only when deeper inspection is useful.
 
+In v1.1, audit-required Artifact reads use this order: direct `artifact_ref` when accessible, exact deterministic filename lookup in ChatGPT Library for the default chat-file path, an explicitly configured persistent connector when available, and manual download/upload only as the final fallback. Normal Result-Envelope-first intake does not search Library just because an Artifact exists.
+
 ---
 
 ## Repository layout
@@ -375,13 +385,16 @@ chatgpt-research-relay/
 │
 ├── examples/
 └── docs/
+    ├── installation.md
+    ├── architecture.md
+    └── pressure-tests.md
 ```
 
 ---
 
 ## Design notes
 
-V1 intentionally stays small.
+Research Relay intentionally stays small.
 
 It does **not** require:
 
@@ -395,7 +408,6 @@ It does **not** require:
 A future version may add:
 
 - deterministic schema validation;
-- Artifact naming helpers;
 - improved workflow automation;
 - optional Research Auditor support;
 - additional real-world examples.
@@ -404,7 +416,7 @@ A future version may add:
 
 ## Pressure tests
 
-V1 was designed against eight pressure-test categories:
+Research Relay was designed against eight pressure-test categories:
 
 1. simple fact verification;
 2. oversized Master context;
@@ -415,7 +427,7 @@ V1 was designed against eight pressure-test categories:
 7. Worker-history contamination;
 8. lightweight Master intake.
 
-The tests focus on whether Research Relay can preserve context isolation without sacrificing research quality.
+v1.1 additionally received live regression coverage for direct Skill installation, Envelope-only `COMPLETE` intake, cross-Project `CONFLICTING` Artifact recovery through Library, and the Worker Context Firewall.
 
 See [`docs/pressure-tests.md`](docs/pressure-tests.md).
 
@@ -431,7 +443,7 @@ If you try it, I'd particularly like to know:
 - Does the Dispatcher send too much context?
 - Is the Result Envelope too long or too short?
 - Have you seen old Worker context leak into a new task?
-- What should v1.1 improve?
+- Where does Artifact transport or orchestration still feel manual?
 
 **[→ Join the GitHub Discussions](https://github.com/qq2638622037-glitch/chatgpt-research-relay/discussions)**
 
