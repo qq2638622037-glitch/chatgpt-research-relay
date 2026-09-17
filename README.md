@@ -17,7 +17,44 @@ Your Master keeps the long-term goals, decisions, and project state.
 A Research Worker receives only the **minimum context needed for one task**, performs the research in isolation, stores detailed evidence outside the Master conversation, and returns only a concise result.
 
 > **Stop sending your entire project history to every research task.**
+## Quick Start
 
+Research Relay uses two complementary Skills:
+
+- **`research-dispatcher`** — install/use this in your **Master Project**
+- **`research-worker`** — install/use this in a separate **Research Worker Project**
+
+### 1. Download
+
+Download the latest release:
+
+**[→ Research Relay — Latest Release](https://github.com/qq2638622037-glitch/chatgpt-research-relay/releases/latest)**
+
+From **Assets**, download:
+
+- `research-dispatcher-v1.0.0.zip`
+- `research-worker-v1.0.0.zip`
+
+### 2. Set up two project roles
+
+```text
+MASTER PROJECT
+    │
+    │  research-dispatcher
+    │
+    └── creates a minimal Task Packet
+              │
+              ▼
+      RESEARCH WORKER PROJECT
+              │
+              │  research-worker
+              │
+              ├── researches & verifies
+              ├── writes Evidence Artifact
+              └── returns short Result Envelope
+                          │
+                          ▼
+                     MASTER PROJECT
 ## Why Research Relay?
 
 Long-running ChatGPT projects tend to accumulate two very different kinds of context:
