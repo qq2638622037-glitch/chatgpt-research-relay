@@ -582,8 +582,8 @@ Research Relay 当前使用：
 1. Task
 2. Executive Finding
 3. Scope & Method
-4. Evidence Table
-5. Detailed Findings
+4. Question-by-Question Findings
+5. Evidence Table
 6. Contradictions / Competing Evidence
 7. Negative / Missing Evidence
 8. Unresolved Questions
@@ -592,13 +592,13 @@ Research Relay 当前使用：
 
 Artifact 保存的是：
 
-* 可复查证据；
-* 明确结论；
-* 明确推断；
-* 来源；
-* 冲突；
-* 不确定性；
-* provenance。
+- 可复查证据；
+- 明确结论；
+- 明确推断；
+- 来源；
+- 冲突；
+- 不确定性；
+- provenance。
 
 它不应该保存隐藏思维链。
 
@@ -606,11 +606,11 @@ Master 首先看 Result Envelope。
 
 只有在以下情况才需要深入打开 Artifact：
 
-* 需要审计；
-* 出现证据冲突；
-* 需要重新验证；
-* 结果异常；
-* 用户明确要求查看完整依据。
+- 需要审计；
+- 出现证据冲突；
+- 需要重新验证；
+- 结果异常；
+- 用户明确要求查看完整依据。
 
 ---
 
