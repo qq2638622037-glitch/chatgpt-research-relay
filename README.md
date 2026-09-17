@@ -279,26 +279,19 @@ known_facts:
   - fact: "The user observed the behavior once in a live test."
     status: user_observation
 
-constraints: []
-
-output_contract:
-  artifact_required: true
-  artifact_target: "chat_file"
-  master_digest_max_chars: 600
-  expose_conflicts: true
-  expose_uncertainty: true
-
 questions:
   - "Is the behavior documented by a first-party source?"
   - "Are there credible contradictory reports?"
-
-artifact_inputs: []
 
 scope:
   include:
     - "Current documentation and directly relevant evidence"
   exclude:
     - "Unrelated historical versions"
+
+constraints: []
+
+artifact_inputs: []
 
 source_policy:
   priority:
@@ -314,13 +307,14 @@ research_budget:
 
 output_contract:
   artifact_required: true
+  artifact_target: "chat_file"
   master_digest_max_chars: 600
   expose_conflicts: true
   expose_uncertainty: true
 
 stop_conditions:
-  - "Evidence is sufficient to answer the core questions"
-  - "Budget is exhausted; return PARTIAL or CONFLICTING instead of searching indefinitely"
+  - "Evidence is sufficient to answer every decision-critical question."
+  - "Budget is exhausted; return the correct non-COMPLETE status instead of searching indefinitely."
 ```
 
 ---
