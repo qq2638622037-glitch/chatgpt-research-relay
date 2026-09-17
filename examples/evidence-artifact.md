@@ -1,0 +1,21 @@
+# Example Evidence Artifact Structure
+
+```markdown
+# RR-20260917-001 — Research Evidence Artifact
+
+## 1. Task
+## 2. Executive Finding
+## 3. Scope & Method
+## 4. Evidence Table
+## 5. Detailed Findings
+## 6. Contradictions / Competing Evidence
+## 7. Negative / Missing Evidence
+## 8. Unresolved Questions
+## 9. Suggested Follow-up / User Test
+## 10. Source Index
+```
+
+Recommended evidence table:
+
+| Claim | Source | Source Type | Date | Supports / Contradicts | Strength | Notes |
+|---|---|---|---|---|---|---|

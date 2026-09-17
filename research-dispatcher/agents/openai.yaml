@@ -1,0 +1,3 @@
+interface:
+  display_name: "Research Dispatcher"
+  short_description: "Package bounded research tasks and intake Worker results"

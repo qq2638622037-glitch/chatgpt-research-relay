@@ -1,0 +1,3 @@
+interface:
+  display_name: "Research Worker"
+  short_description: "Run isolated evidence-first research from a Task Packet"
