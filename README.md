@@ -275,7 +275,16 @@ decision_use: "Help the Master decide whether the behavior can be treated as a c
 
 known_facts:
   - fact: "The user observed the behavior once in a live test."
-    confidence: user_observation
+    status: user_observation
+
+constraints: []
+
+output_contract:
+  artifact_required: true
+  artifact_target: "chat_file"
+  master_digest_max_chars: 600
+  expose_conflicts: true
+  expose_uncertainty: true
 
 questions:
   - "Is the behavior documented by a first-party source?"
