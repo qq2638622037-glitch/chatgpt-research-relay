@@ -3,6 +3,7 @@
 ```yaml
 protocol: research-result/v1
 task_id: RR-20260917-001
+
 status: PARTIAL
 confidence: MEDIUM
 
@@ -25,5 +26,5 @@ unresolved:
 recommended_next_action:
   - "Run a controlled user test or wait for first-party documentation."
 
-artifact_ref: "RR-20260917-001-evidence.md"
+artifact_ref: "RR-20260917-001_evidence.md"
 ```
