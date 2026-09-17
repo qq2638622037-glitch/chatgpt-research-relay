@@ -1,8 +1,10 @@
 # Research Relay
 
 **Keep research context out of your Master chat.**
+
 ![Research Relay — context-isolated Master/Worker research workflow](research-relay-hero.png)
-[简体中文](README.zh-CN.md) · [Architecture](docs/architecture.md) · [Examples](examples/task-packet.md)
+
+[简体中文](README.zh-CN.md) · [Architecture](docs/architecture.md) · [Examples](examples/task-packet.md) · [Discussions](https://github.com/qq2638622037-glitch/chatgpt-research-relay/discussions)
 
 [![Release](https://img.shields.io/github/v/release/qq2638622037-glitch/chatgpt-research-relay?display_name=tag&style=flat-square)](https://github.com/qq2638622037-glitch/chatgpt-research-relay/releases/latest)
 [![License](https://img.shields.io/github/license/qq2638622037-glitch/chatgpt-research-relay?style=flat-square)](LICENSE)
@@ -17,6 +19,9 @@ Your Master keeps the long-term goals, decisions, and project state.
 A Research Worker receives only the **minimum context needed for one task**, performs the research in isolation, stores detailed evidence outside the Master conversation, and returns only a concise result.
 
 > **Stop sending your entire project history to every research task.**
+
+---
+
 ## Quick Start
 
 Research Relay uses two complementary Skills:
@@ -55,6 +60,121 @@ MASTER PROJECT
                           │
                           ▼
                      MASTER PROJECT
+```
+
+The Master keeps your long-term project context.
+
+The Worker receives only what the current research task actually needs.
+
+### 3. Run your first task
+
+In the Master Project, ask for a research task to be delegated using Research Relay.
+
+The Dispatcher should produce a **Task Packet** containing only the minimum sufficient context.
+
+Move that Task Packet to your Research Worker Project and let `research-worker` execute it.
+
+The Worker returns:
+
+- an **Evidence Artifact** with the detailed research and sources;
+- a concise **Result Envelope** for the Master.
+
+> Detailed research stays outside the Master conversation. Only the information needed for project decisions comes back.
+
+### Requirements
+
+- ChatGPT Projects
+- ChatGPT Skills
+- Two separate project contexts are recommended
+- No ChatGPT Work required
+- No Codex required
+- No external Agent runtime required
+
+---
+
+## Before vs. After
+
+### Without Research Relay
+
+A long-running Master conversation often ends up doing everything:
+
+```text
+MASTER CHAT
+
+Project goals
+Long-term decisions
+Historical context
+
+Web searches
+Search snippets
+Failed leads
+Source verification
+Conflicting evidence
+Intermediate findings
+Detailed research notes
+
+Final conclusions
+
+More searches...
+More context...
+More history...
+```
+
+The useful long-term project state and temporary research work accumulate in the same conversation.
+
+---
+
+### With Research Relay
+
+Research Relay separates the two roles:
+
+```text
+MASTER PROJECT
+│
+├── Goals
+├── Decisions
+├── Constraints
+├── Long-term project state
+│
+└── Task Packet
+        │
+        ▼
+════════════ CONTEXT FIREWALL ════════════
+        │
+        ▼
+RESEARCH WORKER
+│
+├── Searches
+├── Verification
+├── Failed leads
+├── Conflicting evidence
+├── Detailed findings
+│
+├── Evidence Artifact
+│      └── Full research stays here
+│
+└── Result Envelope
+       └── Only the concise result returns
+               │
+               ▼
+          MASTER PROJECT
+```
+
+### The difference
+
+| Without Research Relay | With Research Relay |
+|---|---|
+| Research happens inside the Master chat | Research happens in a separate Worker context |
+| Full project history may be reused repeatedly | Worker receives a minimal Task Packet |
+| Search noise accumulates in the main conversation | Detailed evidence goes to an Artifact |
+| Missing evidence can be easy to overlook | Failures and uncertainty are explicit |
+| Master absorbs the entire research process | Master receives a concise Result Envelope |
+| Context grows with every research task | Research context stays isolated |
+
+> **Keep durable project knowledge in the Master. Keep temporary research work with the Worker.**
+
+---
+
 ## Why Research Relay?
 
 Long-running ChatGPT projects tend to accumulate two very different kinds of context:
@@ -88,6 +208,11 @@ RESEARCH WORKER
                  │
                  ▼
            MASTER PROJECT
+```
+
+The goal is better context isolation and cleaner information flow — **not bypassing account or model usage limits**.
+
+---
 
 ## Core ideas
 
@@ -100,37 +225,52 @@ RESEARCH WORKER
 - **Conflicts, missing evidence, and failures are explicit.**
 - **Research is bounded by scope, budget, and stop conditions.**
 
+---
+
 ## Included Skills
 
 ### `research-dispatcher`
 
-Use in the Master project. It decides whether a research task should be delegated, converts the current need into a minimal versioned Task Packet, splits oversized work when necessary, and later intakes the Worker's compact result.
+Use in the Master Project.
+
+It:
+
+- decides whether a research task should be delegated;
+- converts the current need into a minimal versioned Task Packet;
+- avoids forwarding the entire project history;
+- splits oversized work when necessary;
+- performs lightweight intake of the Worker's compact result.
 
 ### `research-worker`
 
-Use in the Research Worker project. It validates the Task Packet, researches only the assigned questions, prefers direct/current evidence, records conflicts and missing evidence, creates a detailed Evidence Artifact, and returns a compact Result Envelope.
+Use in the Research Worker Project.
 
-## Quick start
+It:
 
-1. Install the two Skills in ChatGPT.
-2. Create a **Master Project** for your long-running project.
-3. Create a separate **Research Worker Project** for isolated research tasks.
-4. In the Master Project, ask `research-dispatcher` to package a bounded research task.
-5. Copy the resulting `research-task/v1` Task Packet into a fresh Worker chat.
-6. Let `research-worker` execute the packet and produce:
-   - a detailed Evidence Artifact;
-   - a short `research-result/v1` Result Envelope.
-7. Return only the Result Envelope to the Master first.
-8. Open the full Artifact only when an audit, conflict, or deeper review requires it.
+- treats the Task Packet as the current task's source of truth;
+- validates whether the task is executable;
+- researches only the assigned questions;
+- prefers direct and current evidence;
+- records conflicts and missing evidence;
+- creates a detailed Evidence Artifact;
+- returns a compact Result Envelope.
 
-See [`examples/task-packet.md`](examples/task-packet.md) and [`examples/result-envelope.md`](examples/result-envelope.md).
+See:
+
+- [`examples/task-packet.md`](examples/task-packet.md)
+- [`examples/result-envelope.md`](examples/result-envelope.md)
+- [`examples/evidence-artifact.md`](examples/evidence-artifact.md)
+
+---
 
 ## Task Packet example
 
 ```yaml
 protocol: research-task/v1
 task_id: RR-20260917-001
+
 objective: "Verify whether a specific product behavior is documented in current first-party sources."
+
 decision_use: "Help the Master decide whether the behavior can be treated as a confirmed project assumption."
 
 known_facts:
@@ -172,6 +312,8 @@ stop_conditions:
   - "Budget is exhausted; return PARTIAL or CONFLICTING instead of searching indefinitely"
 ```
 
+---
+
 ## Result states
 
 Research Relay uses explicit completion states instead of forcing every task to look finished:
@@ -182,6 +324,29 @@ Research Relay uses explicit completion states instead of forcing every task to 
 - `CONFLICTING`
 - `NO_EVIDENCE`
 
+A Worker should never turn an incomplete investigation into a fake `COMPLETE`.
+
+---
+
+## Artifact-first research
+
+Detailed research belongs in an **Evidence Artifact**, not in the compact response sent back to the Master.
+
+An Artifact can contain:
+
+- source details;
+- evidence tables;
+- search paths;
+- contradictory evidence;
+- detailed findings;
+- missing evidence;
+- unresolved questions;
+- follow-up suggestions.
+
+The Master receives the shorter **Result Envelope** first and opens the Artifact only when deeper inspection is useful.
+
+---
+
 ## Repository layout
 
 ```text
@@ -191,35 +356,81 @@ chatgpt-research-relay/
 ├── LICENSE
 ├── CHANGELOG.md
 ├── CONTRIBUTING.md
+├── research-relay-hero.png
+│
 ├── research-dispatcher/
 │   ├── SKILL.md
 │   ├── agents/
 │   └── references/
+│
 ├── research-worker/
 │   ├── SKILL.md
 │   ├── agents/
 │   └── references/
+│
 ├── examples/
 └── docs/
 ```
 
+---
+
 ## Design notes
 
-The V1 intentionally stays small:
+V1 intentionally stays small.
 
-- no external Agent runtime is required;
-- no Work/Codex dependency is required;
-- no Google Drive dependency is required;
-- no automatic Auditor is included yet;
-- no scripts are required for the core protocol.
+It does **not** require:
 
-A future version may add deterministic schema validation, artifact naming helpers, and an optional research-auditor Skill.
+- an external Agent runtime;
+- ChatGPT Work;
+- Codex;
+- Google Drive;
+- a dedicated automatic Auditor;
+- custom scripts for the core protocol.
+
+A future version may add:
+
+- deterministic schema validation;
+- Artifact naming helpers;
+- improved workflow automation;
+- optional Research Auditor support;
+- additional real-world examples.
+
+---
 
 ## Pressure tests
 
-V1 was designed against eight pressure-test categories, including oversized Master context, conflicting evidence, no-evidence cases, forbidden sources, overly long results, Worker-history contamination, and lightweight Master intake.
+V1 was designed against eight pressure-test categories:
+
+1. simple fact verification;
+2. oversized Master context;
+3. conflicting sources;
+4. no-evidence cases;
+5. domain-specific source restrictions;
+6. overly long Worker results;
+7. Worker-history contamination;
+8. lightweight Master intake.
+
+The tests focus on whether Research Relay can preserve context isolation without sacrificing research quality.
 
 See [`docs/pressure-tests.md`](docs/pressure-tests.md).
+
+---
+
+## Feedback and Discussions
+
+Research Relay is still early, and real-world feedback is especially valuable.
+
+If you try it, I'd particularly like to know:
+
+- What are you using it for?
+- Does the Dispatcher send too much context?
+- Is the Result Envelope too long or too short?
+- Have you seen old Worker context leak into a new task?
+- What should v1.1 improve?
+
+**[→ Join the GitHub Discussions](https://github.com/qq2638622037-glitch/chatgpt-research-relay/discussions)**
+
+---
 
 ## Acknowledgements and inspiration
 
@@ -236,6 +447,8 @@ The architecture was informed by ideas from several public projects and document
 
 Research Relay is an independent workflow and is not affiliated with those projects.
 
+---
+
 ## Contributing
 
 Feedback is especially useful around:
@@ -248,6 +461,8 @@ Feedback is especially useful around:
 - real-world workflows where the protocol breaks down.
 
 See [`CONTRIBUTING.md`](CONTRIBUTING.md).
+
+---
 
 ## License
 
