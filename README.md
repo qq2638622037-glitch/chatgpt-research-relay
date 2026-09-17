@@ -1,5 +1,5 @@
 # Research Relay
-
+> **Independent project:** Research Relay is an independent open-source project and is not affiliated with, endorsed by, or sponsored by OpenAI. “ChatGPT” is used only to describe the environment this project is designed for.
 **Keep research context out of your Master chat.**
 
 ![Research Relay — context-isolated Master/Worker research workflow](research-relay-hero.png)
