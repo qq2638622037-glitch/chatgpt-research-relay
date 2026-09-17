@@ -87,12 +87,19 @@ This is a design/static pressure test, not yet a live installed-Skill behavioral
 
 ## 4. Validation and packaging
 
-Both Skill folders passed `quick_validate.py` and the official `package_skill.py` validation.
+Both Skill folders passed `quick_validate.py` and `package_skill.py` validation.
 
-Final installation artifacts:
+Validated local package outputs were created as:
 
 - Dispatcher: `dist/dispatcher/skill.zip`
 - Worker: `dist/worker/skill.zip`
+
+The public `v1.0.0` GitHub Release currently distributes them as:
+
+- `research-dispatcher-v1.0.0.zip`
+- `research-worker-v1.0.0.zip`
+
+Whether those renamed public Release ZIP files are accepted directly by the live ChatGPT Skills upload flow has not yet been verified. This is part of the first real E2E installation test.
 
 No example scripts or unused asset files remain in either package.
 
