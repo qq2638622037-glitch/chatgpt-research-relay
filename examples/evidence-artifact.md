@@ -6,8 +6,8 @@
 ## 1. Task
 ## 2. Executive Finding
 ## 3. Scope & Method
-## 4. Evidence Table
-## 5. Detailed Findings
+## 4. Question-by-Question Findings
+## 5. Evidence Table
 ## 6. Contradictions / Competing Evidence
 ## 7. Negative / Missing Evidence
 ## 8. Unresolved Questions
