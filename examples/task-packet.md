@@ -7,8 +7,18 @@ objective: "Verify whether a specific behavior is documented in current first-pa
 decision_use: "Decide whether the Master may treat the behavior as a confirmed assumption."
 
 known_facts:
+  known_facts:
   - fact: "The user observed the behavior once in a live test."
-    confidence: user_observation
+    status: user_observation
+
+constraints: []
+
+output_contract:
+  artifact_required: true
+  artifact_target: "chat_file"
+  master_digest_max_chars: 600
+  expose_conflicts: true
+  expose_uncertainty: true
 
 questions:
   - "Is the behavior documented by a first-party source?"
