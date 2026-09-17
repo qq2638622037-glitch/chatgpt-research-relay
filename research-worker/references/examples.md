@@ -2,7 +2,8 @@
 
 Use only to resolve output behavior. Do not import example facts into real tasks.
 
-## Example A - Complete
+## Example A — Complete
+
 ```yaml
 protocol: research-result/v1
 task_id: RR-20260917-A1B2C3
@@ -20,7 +21,8 @@ recommended_next_action:
 artifact_ref: "RR-20260917-A1B2C3_evidence.md"
 ```
 
-## Example B - Conflicting
+## Example B — Conflicting
+
 ```yaml
 protocol: research-result/v1
 task_id: RR-20260917-G7H8J9
@@ -39,5 +41,6 @@ recommended_next_action:
 artifact_ref: "RR-20260917-G7H8J9_evidence.md"
 ```
 
-## Example C - Blocked by missing required file
+## Example C — Blocked by missing required file
+
 Do not search from memory when the packet says a specific prior artifact is required but it is unavailable. Return `BLOCKED`, name the missing artifact, and preserve any non-dependent work only if it is clearly separable.

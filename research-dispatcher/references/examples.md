@@ -2,7 +2,8 @@
 
 Use these examples to resolve format or boundary questions. Do not copy domain details into unrelated packets.
 
-## Example A - Simple current fact check
+## Example A — Simple current fact check
+
 ```yaml
 protocol: research-task/v1
 task_id: RR-20260917-A1B2C3
@@ -36,7 +37,8 @@ stop_conditions:
   - "Budget is exhausted; return the correct non-COMPLETE status."
 ```
 
-## Example B - Domain rule injection without project-history dump
+## Example B — Domain rule injection without project-history dump
+
 ```yaml
 protocol: research-task/v1
 task_id: RR-20260917-D4E5F6
@@ -73,7 +75,8 @@ stop_conditions:
   - "Budget is exhausted; return PARTIAL/CONFLICTING/NO_EVIDENCE as appropriate."
 ```
 
-## Example C - Do not delegate
+## Example C — Do not delegate
+
 Master request: "Using the three accepted Worker digests already in this chat, decide how they change our project plan."
 
 Keep this in Master. It is cross-task synthesis, not a leaf research task.
