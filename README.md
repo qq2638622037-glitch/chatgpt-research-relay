@@ -1,39 +1,56 @@
 # Research Relay
 
-**Give ChatGPT research workers less context — not more.**
+**Keep research context out of your Master chat.**
 
-Research Relay is a context-isolated Master/Worker research workflow for **ChatGPT Projects + Skills**. It is designed for long-running projects where the main conversation should keep project goals and decisions, while detailed web research, evidence collection, conflicts, and failed searches stay outside the Master context.
+[简体中文](README.zh-CN.md) · [Architecture](docs/architecture.md) · [Examples](examples/task-packet.md)
 
-> Stop sending your entire project history to every research task.
+[![Release](https://img.shields.io/github/v/release/qq2638622037-glitch/chatgpt-research-relay?display_name=tag&style=flat-square)](https://github.com/qq2638622037-glitch/chatgpt-research-relay/releases/latest)
+[![License](https://img.shields.io/github/license/qq2638622037-glitch/chatgpt-research-relay?style=flat-square)](LICENSE)
+[![Stars](https://img.shields.io/github/stars/qq2638622037-glitch/chatgpt-research-relay?style=flat-square)](https://github.com/qq2638622037-glitch/chatgpt-research-relay/stargazers)
+![ChatGPT Skills](https://img.shields.io/badge/ChatGPT-Skills-10A37F?style=flat-square)
 
-## Why this exists
+> **A context-isolated Master/Worker research workflow for long-running ChatGPT Projects + Skills.**
 
-Long-running ChatGPT projects often mix two very different jobs in one conversation:
+Research Relay separates **project memory** from **research execution**.
 
-- project memory, decisions, and orchestration;
-- web searches, source checking, intermediate evidence, and research dead ends.
+Your Master keeps the long-term goals, decisions, and project state.  
+A Research Worker receives only the **minimum context needed for one task**, performs the research in isolation, stores detailed evidence outside the Master conversation, and returns only a concise result.
 
-Research Relay separates them.
+> **Stop sending your entire project history to every research task.**
+
+## Why Research Relay?
+
+Long-running ChatGPT projects tend to accumulate two very different kinds of context:
+
+**Project context** — goals, decisions, constraints, plans, and long-term state.
+
+**Research context** — searches, sources, failed leads, conflicting evidence, intermediate findings, and verification work.
+
+When both live in the same conversation, the Master becomes increasingly crowded.
+
+Research Relay separates them:
 
 ```text
 MASTER PROJECT
   │
   │  research-dispatcher
-  │  creates a minimal Task Packet
-  ▼
-================ CONTEXT FIREWALL ================
-  ▼
-RESEARCH WORKER PROJECT
   │
-  │  research-worker
-  ├── Evidence Artifact  (detailed)
-  └── Result Envelope    (compact)
-          │
-          ▼
-MASTER PROJECT
-```
-
-The goal is **context isolation and cleaner information flow**, not bypassing account or model usage limits.
+  │  Minimal Task Packet
+  ▼
+════════════════ CONTEXT FIREWALL ════════════════
+  ▼
+RESEARCH WORKER
+  │
+  ├── Web research & verification
+  │
+  ├── Evidence Artifact
+  │      └── Full research, sources, conflicts
+  │
+  └── Result Envelope
+         └── Short digest + status
+                 │
+                 ▼
+           MASTER PROJECT
 
 ## Core ideas
 
