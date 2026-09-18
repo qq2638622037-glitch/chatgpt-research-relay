@@ -805,23 +805,27 @@ Do not implement endless `setInterval`, endless polling, or recursive retries.
 
 ## 29. Extension messaging boundary
 
-Content-script messages MUST be treated as untrusted.
+Content-script messages MUST be treated as untrusted. Extension-owned UI messages (for example the popup) are a separate trusted sender class and MUST receive a smaller, explicit command allowlist.
 
 The service worker MUST:
 
 1. validate the message shape;
-2. verify `sender.url` / tab URL belongs to the approved ChatGPT host;
-3. re-validate Task/Result protocol payloads before storing them;
-4. enforce FSM transition guards centrally;
-5. reject unknown message types;
-6. never execute arbitrary URLs supplied by page text.
+2. classify the sender as ChatGPT content or extension-owned UI;
+3. verify ChatGPT content senders belong to the approved ChatGPT host;
+4. allow extension-owned UI only for explicitly internal commands;
+5. re-validate Task/Result protocol payloads before storing them;
+6. enforce FSM transition guards centrally;
+7. reject unknown message types;
+8. never execute arbitrary URLs supplied by page text.
+
+Worker registration MUST NOT trust a URL string supplied by page content. The popup requests registration of the current active tab; the background queries that active tab itself, verifies the approved ChatGPT origin, and stores the observed URL.
 
 Suggested message types:
 
 ```ts
 type BridgeMessage =
   | { type: 'GET_STATE' }
-  | { type: 'SET_WORKER_ENTRY'; url: string }
+  | { type: 'SET_WORKER_ENTRY_CURRENT_TAB' }
   | { type: 'START_RELAY'; rawTask: string; masterUrl: string }
   | { type: 'TASK_POSTED'; rawTask: string; observedUrl: string }
   | { type: 'CAPTURE_RESULT'; rawResult: string }
