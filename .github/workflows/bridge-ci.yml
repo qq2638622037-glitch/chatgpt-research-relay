@@ -39,3 +39,11 @@ jobs:
 
       - name: Build extension
         run: npm run build
+
+      - name: Upload unpacked Chromium build
+        uses: actions/upload-artifact@v4
+        with:
+          name: research-relay-bridge-chromium-unpacked
+          path: research-relay-bridge/.output/chrome-mv3
+          if-no-files-found: error
+          retention-days: 14
