@@ -11,13 +11,17 @@ function makeStatus(text: string): HTMLSpanElement {
   return status
 }
 
+function resolveControlAnchor(element: HTMLElement): HTMLElement {
+  return element.closest<HTMLElement>('pre') ?? element.parentElement ?? element
+}
+
 export function mountTaskControl(candidate: ProtocolCandidate): void {
   if (candidate.kind !== 'task' || !candidate.valid) return
 
-  const pre = candidate.element.closest('pre')
-  if (!pre || pre.hasAttribute(MOUNT_ATTR)) return
+  const anchor = resolveControlAnchor(candidate.element)
+  if (anchor.hasAttribute(MOUNT_ATTR)) return
 
-  pre.setAttribute(MOUNT_ATTR, 'task')
+  anchor.setAttribute(MOUNT_ATTR, 'task')
 
   const wrapper = document.createElement('div')
   wrapper.dataset.researchRelayUi = 'task-control'
@@ -65,5 +69,5 @@ export function mountTaskControl(candidate: ProtocolCandidate): void {
   })
 
   wrapper.append(button, status)
-  pre.insertAdjacentElement('afterend', wrapper)
+  anchor.insertAdjacentElement('afterend', wrapper)
 }
