@@ -9,7 +9,7 @@ const chatGptUrl = z
 
 export const bridgeMessageSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('GET_STATE') }),
-  z.object({ type: z.literal('SET_WORKER_ENTRY'), url: chatGptUrl }),
+  z.object({ type: z.literal('SET_WORKER_ENTRY_CURRENT_TAB') }),
   z.object({
     type: z.literal('START_RELAY'),
     rawTask: z.string(),
