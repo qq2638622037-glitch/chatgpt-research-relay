@@ -1,3 +1,4 @@
+import { defineContentScript } from 'wxt/utils/define-content-script'
 import { findProtocolCandidates } from '../src/adapters/chatgpt/protocol-blocks'
 import { mountTaskControl } from '../src/ui/inline-controls'
 
