@@ -143,7 +143,7 @@ Use:
 - `yaml` for YAML parsing
 - `zod` for structural validation
 
-The package lockfile MUST be committed once the prototype is initialized.
+A package lockfile MUST be committed before the first user-facing test bundle is treated as reproducible. Until that lockfile is committed, CI may use `npm install`, but the missing lockfile remains an explicit pre-E2E cleanup item rather than a silent assumption.
 
 ---
 
@@ -660,11 +660,11 @@ It MUST NOT:
 
 Default staged representation:
 
-```text
+~~~~text
 ```yaml
 <exact validated YAML payload>
 ```
-```
+~~~~
 
 The YAML payload inside the fence MUST be the validated raw protocol block.
 
