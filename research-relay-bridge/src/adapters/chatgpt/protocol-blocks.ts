@@ -56,7 +56,18 @@ function asCandidate(element: HTMLElement): ProtocolCandidate | null {
 export function findProtocolCandidates(
   root: ParentNode = document,
 ): ProtocolCandidate[] {
-  const nodes = Array.from(root.querySelectorAll<HTMLElement>('pre code'))
+  const nodes: HTMLElement[] = []
+
+  if (
+    root instanceof HTMLElement &&
+    root.matches('code') &&
+    root.parentElement?.matches('pre')
+  ) {
+    nodes.push(root)
+  }
+
+  nodes.push(...Array.from(root.querySelectorAll<HTMLElement>('pre code')))
+
   return nodes
     .map(asCandidate)
     .filter((candidate): candidate is ProtocolCandidate => candidate !== null)
