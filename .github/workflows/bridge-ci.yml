@@ -1,5 +1,7 @@
 name: Bridge CI
 
+# Final pre-handoff verification: typecheck + tests + build + artifact
+
 on:
   push:
     branches:
