@@ -11,9 +11,10 @@ import {
   setBridgeConfig,
 } from '../src/storage/store'
 
-function isExtensionUiSender(url?: string): boolean {
-  if (!url) return false
-  return url.startsWith(browser.runtime.getURL('/'))
+function isExtensionUiSender(
+  sender: Browser.runtime.MessageSender,
+): boolean {
+  return sender.id === browser.runtime.id && sender.tab == null
 }
 
 async function getApprovedActiveChatGptTab() {
@@ -37,7 +38,7 @@ export default defineBackground({
         }
 
         const fromChatGpt = isApprovedChatGptUrl(sender.url)
-        const fromExtensionUi = isExtensionUiSender(sender.url)
+        const fromExtensionUi = isExtensionUiSender(sender)
 
         if (parsed.data.type === 'GET_STATE') {
           if (!fromChatGpt && !fromExtensionUi) {
