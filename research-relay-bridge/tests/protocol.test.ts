@@ -73,6 +73,14 @@ describe('task validation', () => {
     expect(validateTaskPacket(raw).valid).toBe(false)
   })
 
+  it('rejects YAML anchors even when never referenced', () => {
+    const raw = validTask.replace(
+      'constraints: []',
+      'constraints: &shared []',
+    )
+    expect(validateTaskPacket(raw).valid).toBe(false)
+  })
+
   it('preserves unknown fields structurally', () => {
     const result = validateTaskPacket(`${validTask}bridge_extension: true\n`)
     expect(result.valid).toBe(true)
@@ -106,6 +114,12 @@ describe('protocol text normalization', () => {
   it('normalizes line endings and edge blank lines only', () => {
     expect(normalizeProtocolText('\r\na: 1\r\n  b: 2\r\n\r\n')).toBe(
       'a: 1\n  b: 2',
+    )
+  })
+
+  it('preserves internal whitespace differences', () => {
+    expect(normalizeProtocolText('a: 1\n b: 2')).not.toBe(
+      normalizeProtocolText('a: 1\n  b: 2'),
     )
   })
 })
