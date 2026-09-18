@@ -2,6 +2,7 @@ import {
   bridgeMessageSchema,
   isApprovedChatGptUrl,
 } from '../src/messaging/messages'
+import { startRelay } from '../src/relay/controller'
 import {
   getActiveRelay,
   getBridgeConfig,
@@ -66,13 +67,25 @@ export default defineBackground({
         return { ok: true, workerEntryUrl: tab.url }
       }
 
-      if (!fromChatGpt) {
+      if (!fromChatGpt || !sender.url) {
         return { ok: false, error: 'UNAPPROVED_SENDER' }
+      }
+
+      if (parsed.data.type === 'START_RELAY') {
+        if (parsed.data.masterUrl !== sender.url) {
+          return { ok: false, error: 'MASTER_URL_MISMATCH' }
+        }
+
+        return startRelay({
+          rawTask: parsed.data.rawTask,
+          masterUrl: sender.url,
+          masterTabIdHint: sender.tab?.id,
+        })
       }
 
       return {
         ok: false,
-        error: 'NOT_IMPLEMENTED_IN_4A',
+        error: 'NOT_IMPLEMENTED_IN_CURRENT_SLICE',
       }
     })
   },
