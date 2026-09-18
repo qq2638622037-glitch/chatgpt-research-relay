@@ -68,6 +68,31 @@ describe('ChatGPT protocol block detection', () => {
     expect(found[0]?.valid).toBe(true)
   })
 
+  it('detects a code block even when code is nested inside wrappers', () => {
+    document.body.innerHTML =
+      '<pre><div class="code-body"><div><code id="packet"></code></div></div></pre>'
+    document.querySelector('#packet')!.textContent = validTask
+
+    const found = findProtocolCandidates(document)
+    expect(found).toHaveLength(1)
+    expect(found[0]?.element.id).toBe('packet')
+    expect(found[0]?.valid).toBe(true)
+  })
+
+  it('rescans the nearest code ancestor when streaming adds an inner node', () => {
+    document.body.innerHTML = '<pre><div><code id="packet"><span id="stream"></span></code></div></pre>'
+    const code = document.querySelector('#packet')!
+    code.textContent = validTask
+    const streamRoot = document.createElement('span')
+    streamRoot.id = 'stream-root'
+    code.append(streamRoot)
+
+    const found = findProtocolCandidates(streamRoot)
+    expect(found).toHaveLength(1)
+    expect(found[0]?.element).toBe(code)
+    expect(found[0]?.valid).toBe(true)
+  })
+
   it('detects multiple concrete blocks without guessing newest', () => {
     document.body.innerHTML = `
       <pre><code id="task"></code></pre>
@@ -80,14 +105,14 @@ describe('ChatGPT protocol block detection', () => {
     expect(found.map((item) => item.kind)).toEqual(['task', 'result'])
   })
 
-  it('ignores protocol text outside pre/code', () => {
+  it('ignores protocol text outside code/pre', () => {
     document.body.innerHTML = `<p>protocol: research-task/v1</p>`
     expect(findProtocolCandidates(document)).toHaveLength(0)
   })
 
   it('reports a malformed candidate as invalid', () => {
     document.body.innerHTML =
-      '<pre><code>protocol: research-task/v1\ntask_id: RR-BAD</code></pre>'
+      '<pre><code>protocol: research-task/v1\\ntask_id: RR-BAD</code></pre>'
 
     const found = findProtocolCandidates(document)
     expect(found).toHaveLength(1)
@@ -100,6 +125,22 @@ describe('ChatGPT protocol block detection', () => {
     document.querySelector('code')!.textContent = validTask
 
     expect(findProtocolCandidates(document)).toHaveLength(0)
+  })
+
+  it('ignores protocol blocks inside explicit user messages', () => {
+    document.body.innerHTML =
+      '<article data-message-author-role="user"><pre><code id="packet"></code></pre></article>'
+    document.querySelector('#packet')!.textContent = validTask
+
+    expect(findProtocolCandidates(document)).toHaveLength(0)
+  })
+
+  it('accepts protocol blocks inside explicit assistant messages', () => {
+    document.body.innerHTML =
+      '<article data-message-author-role="assistant"><pre><div><code id="packet"></code></div></pre></article>'
+    document.querySelector('#packet')!.textContent = validTask
+
+    expect(findProtocolCandidates(document)).toHaveLength(1)
   })
 
   it('can scan a code element as the incremental root', () => {
