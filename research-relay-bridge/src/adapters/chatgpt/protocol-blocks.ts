@@ -27,8 +27,20 @@ function isInsideEditable(element: Element): boolean {
   )
 }
 
+function isInsideNonAssistantMessage(element: Element): boolean {
+  const message = element.closest('[data-message-author-role]')
+  if (!message) return false
+  return message.getAttribute('data-message-author-role') !== 'assistant'
+}
+
+function hasProtocolMarker(text: string): boolean {
+  return TASK_MARKER.test(text) || RESULT_MARKER.test(text)
+}
+
 function asCandidate(element: HTMLElement): ProtocolCandidate | null {
-  if (isInsideEditable(element)) return null
+  if (isInsideEditable(element) || isInsideNonAssistantMessage(element)) {
+    return null
+  }
 
   const rawYaml = element.textContent ?? ''
   let kind: ProtocolKind | null = null
@@ -53,27 +65,43 @@ function asCandidate(element: HTMLElement): ProtocolCandidate | null {
   }
 }
 
-export function findProtocolCandidates(
-  root: ParentNode = document,
-): ProtocolCandidate[] {
+function collectProtocolNodes(root: ParentNode): HTMLElement[] {
   const nodes: HTMLElement[] = []
+  const seen = new Set<HTMLElement>()
+
+  const add = (node: HTMLElement | null) => {
+    if (!node || seen.has(node)) return
+    seen.add(node)
+    nodes.push(node)
+  }
 
   if (root instanceof HTMLElement) {
-    if (root.matches('code') && root.parentElement?.matches('pre')) {
-      nodes.push(root)
-    } else if (root.matches('pre') && !root.querySelector(':scope > code')) {
-      nodes.push(root)
+    add(root.closest<HTMLElement>('code, pre'))
+    if (root.matches('code, pre')) add(root)
+  }
+
+  for (const code of root.querySelectorAll<HTMLElement>('code')) {
+    add(code)
+  }
+
+  for (const pre of root.querySelectorAll<HTMLElement>('pre')) {
+    const codeDescendants = Array.from(pre.querySelectorAll<HTMLElement>('code'))
+    const descendantAlreadyCarriesPacket = codeDescendants.some((code) =>
+      hasProtocolMarker(code.textContent ?? ''),
+    )
+
+    if (!descendantAlreadyCarriesPacket) {
+      add(pre)
     }
   }
 
-  nodes.push(...Array.from(root.querySelectorAll<HTMLElement>('pre > code')))
-  nodes.push(
-    ...Array.from(
-      root.querySelectorAll<HTMLElement>('pre:not(:has(> code))'),
-    ),
-  )
+  return nodes
+}
 
-  return Array.from(new Set(nodes))
+export function findProtocolCandidates(
+  root: ParentNode = document,
+): ProtocolCandidate[] {
+  return collectProtocolNodes(root)
     .map(asCandidate)
     .filter((candidate): candidate is ProtocolCandidate => candidate !== null)
 }
