@@ -1,4 +1,4 @@
-import { parseDocument } from 'yaml'
+import { parseDocument, visit } from 'yaml'
 import type { ZodError, ZodType } from 'zod'
 import {
   resultEnvelopeSchema,
@@ -32,6 +32,26 @@ function zodIssues(error: ZodError): ValidationIssue[] {
   }))
 }
 
+function containsAnchorOrAlias(doc: ReturnType<typeof parseDocument>): boolean {
+  let found = false
+
+  visit(doc, (_key, node) => {
+    if (found || !node || typeof node !== 'object') return
+
+    if ('source' in node && node.constructor?.name === 'Alias') {
+      found = true
+      return visit.BREAK
+    }
+
+    if ('anchor' in node && typeof node.anchor === 'string' && node.anchor) {
+      found = true
+      return visit.BREAK
+    }
+  })
+
+  return found
+}
+
 function parseYamlJsonLike(rawYaml: string): ValidationResult<unknown> {
   if (byteLength(rawYaml) > MAX_PROTOCOL_BYTES) {
     return {
@@ -49,7 +69,6 @@ function parseYamlJsonLike(rawYaml: string): ValidationResult<unknown> {
   const doc = parseDocument(rawYaml, {
     version: '1.2',
     uniqueKeys: true,
-    maxAliasCount: 0,
     prettyErrors: false,
   })
 
@@ -67,6 +86,19 @@ function parseYamlJsonLike(rawYaml: string): ValidationResult<unknown> {
     }
   }
 
+  if (containsAnchorOrAlias(doc)) {
+    return {
+      valid: false,
+      errors: [
+        {
+          path: '$',
+          message: 'YAML anchors and aliases are not allowed in protocol blocks',
+        },
+      ],
+      warnings: [],
+    }
+  }
+
   let value: unknown
   try {
     value = doc.toJS({ maxAliasCount: 0 })
@@ -76,7 +108,8 @@ function parseYamlJsonLike(rawYaml: string): ValidationResult<unknown> {
       errors: [
         {
           path: '$',
-          message: error instanceof Error ? error.message : 'Unable to decode YAML',
+          message:
+            error instanceof Error ? error.message : 'Unable to decode YAML',
         },
       ],
       warnings: [],
@@ -118,7 +151,9 @@ function validateWithSchema<T>(
   }
 }
 
-export function validateTaskPacket(rawYaml: string): ValidationResult<TaskPacket> {
+export function validateTaskPacket(
+  rawYaml: string,
+): ValidationResult<TaskPacket> {
   return validateWithSchema(rawYaml, taskPacketSchema)
 }
 
