@@ -1,4 +1,4 @@
-import { storage } from '#imports'
+import { storage } from '@wxt-dev/storage'
 import type {
   ActiveRelay,
   BridgeConfig,
