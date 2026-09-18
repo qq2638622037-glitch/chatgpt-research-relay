@@ -1,0 +1,41 @@
+name: Bridge CI
+
+on:
+  push:
+    branches:
+      - v1.2-browser-relay-bridge
+    paths:
+      - 'research-relay-bridge/**'
+      - '.github/workflows/bridge-ci.yml'
+  pull_request:
+    paths:
+      - 'research-relay-bridge/**'
+      - '.github/workflows/bridge-ci.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: research-relay-bridge
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run unit tests
+        run: npm test
+
+      - name: Build extension
+        run: npm run build
