@@ -58,17 +58,22 @@ export function findProtocolCandidates(
 ): ProtocolCandidate[] {
   const nodes: HTMLElement[] = []
 
-  if (
-    root instanceof HTMLElement &&
-    root.matches('code') &&
-    root.parentElement?.matches('pre')
-  ) {
-    nodes.push(root)
+  if (root instanceof HTMLElement) {
+    if (root.matches('code') && root.parentElement?.matches('pre')) {
+      nodes.push(root)
+    } else if (root.matches('pre') && !root.querySelector(':scope > code')) {
+      nodes.push(root)
+    }
   }
 
-  nodes.push(...Array.from(root.querySelectorAll<HTMLElement>('pre code')))
+  nodes.push(...Array.from(root.querySelectorAll<HTMLElement>('pre > code')))
+  nodes.push(
+    ...Array.from(
+      root.querySelectorAll<HTMLElement>('pre:not(:has(> code))'),
+    ),
+  )
 
-  return nodes
+  return Array.from(new Set(nodes))
     .map(asCandidate)
     .filter((candidate): candidate is ProtocolCandidate => candidate !== null)
 }
