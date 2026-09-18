@@ -1,7 +1,6 @@
-# Task Packet Intake — research-task/v1
+# Task Packet Intake - research-task/v1
 
 Accept this required shape:
-
 ```yaml
 protocol: research-task/v1
 task_id: RR-YYYYMMDD-XXXXXX
@@ -37,19 +36,20 @@ stop_conditions: []
 ```
 
 ## Intake validation
-
 Before research:
 
-1. Confirm `protocol` is `research-task/v1`.
-2. Confirm `task_id`, `objective`, `questions`, `scope`, `source_policy`, `research_budget`, and `output_contract` are usable.
-3. Confirm required `artifact_inputs` are actually accessible when the task depends on them.
-4. Identify contradictions inside the packet without silently repairing them.
-5. Never fill a missing decision-critical field from old Worker history.
+1. Confirm `protocol` is exactly `research-task/v1`.
+2. Confirm `task_id`, `objective`, and `decision_use` are present and usable.
+3. Confirm every `known_facts` entry has a `fact` plus a valid `status`: `confirmed`, `user_observation`, or `working_assumption`.
+4. Confirm `questions`, `scope.include`, `scope.exclude`, and `constraints` are present and usable for the task.
+5. Confirm `source_policy`, `research_budget`, `output_contract`, and `stop_conditions` are usable.
+6. Confirm required `artifact_inputs` are actually accessible when the task depends on them.
+7. Identify contradictions inside the packet without silently repairing them.
+8. Never fill a missing decision-critical field from old Worker history.
 
 If the packet is executable despite a minor omission, proceed and record the assumption in the Artifact. If an essential input is missing and the task cannot be executed faithfully, return `BLOCKED` with the missing requirement instead of improvising.
 
 ## Context firewall
-
 Treat these as valid pre-existing context:
 
 - Explicit `known_facts`.
