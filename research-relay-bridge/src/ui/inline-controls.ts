@@ -1,3 +1,4 @@
+import { browser } from 'wxt/browser'
 import type { ProtocolCandidate } from '../adapters/chatgpt/protocol-blocks'
 
 const MOUNT_ATTR = 'data-research-relay-control'
