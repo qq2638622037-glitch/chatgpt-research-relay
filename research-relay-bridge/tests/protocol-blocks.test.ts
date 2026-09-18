@@ -58,6 +58,16 @@ describe('ChatGPT protocol block detection', () => {
     expect(found[0]?.taskId).toBe('RR-20260918-DOM001')
   })
 
+  it('detects a valid task in a pre-only block', () => {
+    document.body.innerHTML = '<pre id="packet"></pre>'
+    document.querySelector('#packet')!.textContent = validTask
+
+    const found = findProtocolCandidates(document)
+    expect(found).toHaveLength(1)
+    expect(found[0]?.kind).toBe('task')
+    expect(found[0]?.valid).toBe(true)
+  })
+
   it('detects multiple concrete blocks without guessing newest', () => {
     document.body.innerHTML = `
       <pre><code id="task"></code></pre>
