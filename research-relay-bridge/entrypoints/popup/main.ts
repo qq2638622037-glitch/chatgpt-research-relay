@@ -1,3 +1,5 @@
+import { browser } from 'wxt/browser'
+
 type GetStateResponse =
   | {
       ok: true
