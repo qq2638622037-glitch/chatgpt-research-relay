@@ -4,12 +4,32 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Research Relay Bridge</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        margin: 0;
+        min-width: 320px;
+      }
+      main {
+        padding: 16px;
+      }
+      button {
+        width: 100%;
+        padding: 8px 10px;
+      }
+      #status {
+        white-space: pre-wrap;
+        font-size: 12px;
+      }
+    </style>
   </head>
   <body>
     <main>
       <h1>Research Relay Bridge</h1>
       <p>v0.1.0-alpha.1</p>
-      <p>Stage 4A skeleton loaded.</p>
+      <button id="set-worker" type="button">Set current project as Worker</button>
+      <p id="status">Loading…</p>
     </main>
+    <script type="module" src="./main.ts"></script>
   </body>
 </html>
