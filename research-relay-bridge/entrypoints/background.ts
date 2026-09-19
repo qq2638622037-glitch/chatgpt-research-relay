@@ -4,7 +4,7 @@ import {
   bridgeMessageSchema,
   isApprovedChatGptUrl,
 } from '../src/messaging/messages'
-import { startRelay } from '../src/relay/controller'
+import { cancelRelay, startRelay } from '../src/relay/controller'
 import {
   getActiveRelay,
   getBridgeConfig,
@@ -69,6 +69,14 @@ export default defineBackground({
           })
 
           return { ok: true, workerEntryUrl: tab.url }
+        }
+
+        if (parsed.data.type === 'CANCEL_RELAY') {
+          if (!fromExtensionUi) {
+            return { ok: false, error: 'UNAPPROVED_SENDER' }
+          }
+
+          return cancelRelay()
         }
 
         if (!fromChatGpt || !sender.url) {
