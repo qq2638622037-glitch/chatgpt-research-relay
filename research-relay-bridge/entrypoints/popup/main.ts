@@ -48,7 +48,9 @@ function renderStatus(response: GetStateResponse) {
   if (response.activeRelay?.workerContextVerifiedAt) {
     workerContext = '\nWorker adapter/context: verified'
   } else if (response.activeRelay?.lastError?.code === 'ADAPTER_UNHEALTHY') {
-    workerContext = `\nWorker adapter/context: blocked · ${response.activeRelay.lastError.code}`
+    workerContext =
+      `\nWorker adapter/context: blocked · ${response.activeRelay.lastError.code}` +
+      `\nReason: ${response.activeRelay.lastError.message}`
   } else if (response.activeRelay?.state === 'WORKER_OPENING') {
     workerContext = '\nWorker adapter/context: pending'
   }

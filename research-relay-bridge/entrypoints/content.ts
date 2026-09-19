@@ -69,9 +69,21 @@ export default defineContentScript({
           continue
         }
 
+        let scheduledFromAddedNode = false
+
         for (const node of mutation.addedNodes) {
           if (node instanceof HTMLElement) {
             schedule(node)
+            scheduledFromAddedNode = true
+          }
+        }
+
+        // ChatGPT may remove an extension-owned control during a React
+        // reconciliation without adding a replacement node. Rescan the
+        // mutation parent so stale mount markers can self-heal.
+        if (mutation.removedNodes.length > 0 && !scheduledFromAddedNode) {
+          if (mutation.target instanceof HTMLElement) {
+            schedule(mutation.target)
           }
         }
       }

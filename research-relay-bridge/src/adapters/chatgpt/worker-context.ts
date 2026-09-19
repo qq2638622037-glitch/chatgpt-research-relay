@@ -4,6 +4,10 @@ import { isApprovedChatGptUrl } from '../../messaging/messages'
 export const WORKER_CONTEXT_PROBE_TYPE = 'WORKER_CONTEXT_PROBE' as const
 export const WORKER_ADAPTER_VERSION = 1 as const
 
+const DEFAULT_MAX_ATTEMPTS = 12
+const DEFAULT_ATTEMPT_TIMEOUT_MS = 800
+const DEFAULT_RETRY_DELAY_MS = 350
+
 export const workerContextProbeRequestSchema = z
   .object({
     type: z.literal(WORKER_CONTEXT_PROBE_TYPE),
@@ -122,9 +126,10 @@ async function withTimeout<T>(
 export async function probeWorkerContextWithRetry(
   options: WorkerContextProbeRetryOptions,
 ): Promise<WorkerContextProbeRetryResult> {
-  const maxAttempts = options.maxAttempts ?? 4
-  const attemptTimeoutMs = options.attemptTimeoutMs ?? 750
-  const retryDelayMs = options.retryDelayMs ?? 200
+  const maxAttempts = options.maxAttempts ?? DEFAULT_MAX_ATTEMPTS
+  const attemptTimeoutMs =
+    options.attemptTimeoutMs ?? DEFAULT_ATTEMPT_TIMEOUT_MS
+  const retryDelayMs = options.retryDelayMs ?? DEFAULT_RETRY_DELAY_MS
   const sleep =
     options.sleep ??
     ((ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms)))

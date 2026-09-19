@@ -140,7 +140,9 @@ async function startRelayAndOpenWorker(params: {
   )
 
   if (!context.ok) {
-    await failWorkerAdapter(context.reason)
+    await failWorkerAdapter(
+      `${context.reason} after ${context.attempts} probe attempts`,
+    )
     return {
       ok: false,
       error: 'ADAPTER_UNHEALTHY',

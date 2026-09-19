@@ -2,6 +2,7 @@ import { browser } from 'wxt/browser'
 import type { ProtocolCandidate } from '../adapters/chatgpt/protocol-blocks'
 
 const MOUNT_ATTR = 'data-research-relay-control'
+const TASK_CONTROL_SELECTOR = '[data-research-relay-ui="task-control"]'
 
 function makeStatus(text: string): HTMLSpanElement {
   const status = document.createElement('span')
@@ -15,12 +16,26 @@ function resolveControlAnchor(element: HTMLElement): HTMLElement {
   return element.closest<HTMLElement>('pre') ?? element.parentElement ?? element
 }
 
+function hasLiveTaskControl(anchor: HTMLElement): boolean {
+  const sibling = anchor.nextElementSibling
+  return Boolean(
+    sibling?.matches(TASK_CONTROL_SELECTOR) &&
+      sibling.isConnected &&
+      anchor.hasAttribute(MOUNT_ATTR),
+  )
+}
+
 export function mountTaskControl(candidate: ProtocolCandidate): void {
   if (candidate.kind !== 'task' || !candidate.valid) return
 
   const anchor = resolveControlAnchor(candidate.element)
-  if (anchor.hasAttribute(MOUNT_ATTR)) return
 
+  if (hasLiveTaskControl(anchor)) return
+
+  // ChatGPT can re-render an assistant message and remove extension-owned
+  // siblings while leaving attributes on the preserved <pre>. Treat that
+  // marker as stale and self-heal by mounting the control again.
+  anchor.removeAttribute(MOUNT_ATTR)
   anchor.setAttribute(MOUNT_ATTR, 'task')
 
   const wrapper = document.createElement('div')
