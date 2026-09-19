@@ -18,6 +18,8 @@ type GetStateResponse =
 const statusEl = document.querySelector<HTMLParagraphElement>('#status')
 const setWorkerButton =
   document.querySelector<HTMLButtonElement>('#set-worker')
+const cancelRelayButton =
+  document.querySelector<HTMLButtonElement>('#cancel-relay')
 
 function renderStatus(response: GetStateResponse) {
   if (!statusEl) return
@@ -67,3 +69,24 @@ setWorkerButton?.addEventListener('click', async () => {
 })
 
 void refresh()
+
+
+cancelRelayButton?.addEventListener('click', async () => {
+  if (statusEl) statusEl.textContent = 'Cancelling active relay…'
+
+  const response = (await browser.runtime.sendMessage({
+    type: 'CANCEL_RELAY',
+  })) as { ok: boolean; error?: string; taskId?: string }
+
+  if (!response.ok) {
+    if (statusEl) {
+      statusEl.textContent =
+        response.error === 'NO_ACTIVE_RELAY'
+          ? 'No active relay'
+          : `Cancel failed: ${response.error ?? 'unknown error'}`
+    }
+    return
+  }
+
+  await refresh()
+})
