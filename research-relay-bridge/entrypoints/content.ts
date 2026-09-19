@@ -1,0 +1,108 @@
+import { browser } from 'wxt/browser'
+import { defineContentScript } from 'wxt/utils/define-content-script'
+import { findProtocolCandidates } from '../src/adapters/chatgpt/protocol-blocks'
+import {
+  WORKER_ADAPTER_VERSION,
+  workerContextProbeRequestSchema,
+  type WorkerContextProbeResponse,
+} from '../src/adapters/chatgpt/worker-context'
+import { mountTaskControl } from '../src/ui/inline-controls'
+
+const DEBOUNCE_MS = 120
+
+export default defineContentScript({
+  matches: ['https://chatgpt.com/*'],
+  runAt: 'document_idle',
+  main() {
+    const pendingRoots = new Set<ParentNode>()
+    let timer: ReturnType<typeof setTimeout> | undefined
+
+    const handleMessage = (message: unknown) => {
+      const parsed = workerContextProbeRequestSchema.safeParse(message)
+      if (!parsed.success) return undefined
+
+      const response: WorkerContextProbeResponse = {
+        ok: true,
+        adapter: 'chatgpt',
+        adapterVersion: WORKER_ADAPTER_VERSION,
+        observedUrl: window.location.href,
+        readyState: document.readyState as 'interactive' | 'complete',
+      }
+
+      return response
+    }
+
+    browser.runtime.onMessage.addListener(handleMessage)
+
+    const scan = (root: ParentNode) => {
+      for (const candidate of findProtocolCandidates(root)) {
+        if (candidate.kind === 'task') {
+          mountTaskControl(candidate)
+        }
+      }
+    }
+
+    const flush = () => {
+      timer = undefined
+      const roots = Array.from(pendingRoots)
+      pendingRoots.clear()
+
+      for (const root of roots) {
+        scan(root)
+      }
+    }
+
+    const schedule = (root: ParentNode) => {
+      pendingRoots.add(root)
+      if (timer) clearTimeout(timer)
+      timer = setTimeout(flush, DEBOUNCE_MS)
+    }
+
+    scan(document)
+
+    const observer = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        if (mutation.type === 'characterData') {
+          if (mutation.target.parentElement) {
+            schedule(mutation.target.parentElement)
+          }
+          continue
+        }
+
+        let scheduledFromAddedNode = false
+
+        for (const node of mutation.addedNodes) {
+          if (node instanceof HTMLElement) {
+            schedule(node)
+            scheduledFromAddedNode = true
+          }
+        }
+
+        // ChatGPT may remove an extension-owned control during a React
+        // reconciliation without adding a replacement node. Rescan the
+        // mutation parent so stale mount markers can self-heal.
+        if (mutation.removedNodes.length > 0 && !scheduledFromAddedNode) {
+          if (mutation.target instanceof HTMLElement) {
+            schedule(mutation.target)
+          }
+        }
+      }
+    })
+
+    observer.observe(document.documentElement, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+    })
+
+    window.addEventListener(
+      'pagehide',
+      () => {
+        browser.runtime.onMessage.removeListener(handleMessage)
+        observer.disconnect()
+        if (timer) clearTimeout(timer)
+      },
+      { once: true },
+    )
+  },
+})
