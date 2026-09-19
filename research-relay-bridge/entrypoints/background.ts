@@ -4,7 +4,14 @@ import {
   bridgeMessageSchema,
   isApprovedChatGptUrl,
 } from '../src/messaging/messages'
-import { cancelRelay, startRelay } from '../src/relay/controller'
+import { selectWorkerTab } from '../src/navigation/worker-tabs'
+import {
+  beginWorkerOpening,
+  cancelRelay,
+  failWorkerOpening,
+  startRelay,
+} from '../src/relay/controller'
+import type { ActiveRelay } from '../src/relay/types'
 import {
   getActiveRelay,
   getBridgeConfig,
@@ -25,6 +32,92 @@ async function getApprovedActiveChatGptTab() {
 
   if (!tab?.url || !isApprovedChatGptUrl(tab.url)) return null
   return tab
+}
+
+async function openOrFocusWorkerProject(
+  relay: ActiveRelay,
+): Promise<{ tabId: number; action: 'opened' | 'focused' }> {
+  if (!isApprovedChatGptUrl(relay.workerEntryUrl)) {
+    throw new Error('Stored Worker entry URL is not an approved ChatGPT URL')
+  }
+
+  const chatGptTabs = await browser.tabs.query({
+    url: 'https://chatgpt.com/*',
+  })
+  const existing = selectWorkerTab(
+    chatGptTabs,
+    relay.workerEntryUrl,
+    relay.workerTabIdHint,
+  )
+
+  if (existing?.id != null) {
+    await browser.tabs.update(existing.id, { active: true })
+    await browser.windows.update(existing.windowId, { focused: true })
+    return { tabId: existing.id, action: 'focused' }
+  }
+
+  const created = await browser.tabs.create({
+    url: relay.workerEntryUrl,
+    active: true,
+  })
+
+  if (created.id == null) {
+    throw new Error('Browser did not return a Worker tab ID')
+  }
+
+  await browser.windows.update(created.windowId, { focused: true })
+  return { tabId: created.id, action: 'opened' }
+}
+
+async function startRelayAndOpenWorker(params: {
+  rawTask: string
+  masterUrl: string
+  masterTabIdHint?: number
+}) {
+  const started = await startRelay(params)
+  if (!started.ok) return started
+
+  const active = await getActiveRelay()
+  if (!active) {
+    return { ok: false, error: 'WORKER_OPEN_FAILED' }
+  }
+
+  if (
+    active.state !== 'TASK_VALIDATED' &&
+    active.state !== 'WORKER_OPENING' &&
+    active.state !== 'ERROR_RECOVERABLE'
+  ) {
+    return started
+  }
+
+  const opening = await beginWorkerOpening()
+  if (!opening.ok) {
+    return { ok: false, error: 'WORKER_OPEN_FAILED' }
+  }
+
+  try {
+    const navigation = await openOrFocusWorkerProject(opening.relay)
+    const persisted = await beginWorkerOpening(navigation.tabId)
+
+    if (!persisted.ok) {
+      throw new Error('Could not persist Worker tab hint')
+    }
+
+    return {
+      ...started,
+      state: persisted.relay.state,
+      workerAction: navigation.action,
+    }
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : 'Unknown Worker open failure'
+    await failWorkerOpening(message)
+    return {
+      ok: false,
+      error: 'WORKER_OPEN_FAILED',
+      taskId: started.taskId,
+    }
+  }
 }
 
 export default defineBackground({
@@ -88,7 +181,7 @@ export default defineBackground({
             return { ok: false, error: 'MASTER_URL_MISMATCH' }
           }
 
-          return startRelay({
+          return startRelayAndOpenWorker({
             rawTask: parsed.data.rawTask,
             masterUrl: sender.url,
             masterTabIdHint: sender.tab?.id,
