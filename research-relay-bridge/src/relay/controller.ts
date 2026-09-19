@@ -1,6 +1,7 @@
 import { hashProtocolText } from '../protocol/hash'
 import { validateTaskPacket } from '../protocol/validate'
 import {
+  addTerminalHistory,
   getActiveRelay,
   getBridgeConfig,
   setActiveRelay,
@@ -103,6 +104,42 @@ export async function startRelay(params: {
       taskId: relay.taskId,
       state: relay.state,
       alreadyActive: false,
+    }
+  })
+}
+
+export type CancelRelayResult =
+  | {
+      ok: true
+      cancelled: boolean
+      taskId?: string
+    }
+  | {
+      ok: false
+      error: 'NO_ACTIVE_RELAY'
+    }
+
+export async function cancelRelay(): Promise<CancelRelayResult> {
+  return serialize(async () => {
+    const existing = await getActiveRelay()
+
+    if (!existing || isTerminalState(existing.state)) {
+      return { ok: false, error: 'NO_ACTIVE_RELAY' }
+    }
+
+    await addTerminalHistory({
+      taskId: existing.taskId,
+      terminalState: 'CANCELLED',
+      completedAt: new Date().toISOString(),
+      lastErrorCode: existing.lastError?.code,
+    })
+
+    await setActiveRelay(null)
+
+    return {
+      ok: true,
+      cancelled: true,
+      taskId: existing.taskId,
     }
   })
 }
