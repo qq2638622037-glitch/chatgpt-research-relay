@@ -1162,20 +1162,41 @@ Implementation MUST proceed in this order:
 - locator abstraction
 - fixture tests
 
+### 4D.5 — Mandatory live smoke test
+Before implementing 4E, install the unpacked Chromium artifact in a real Edge/Chrome session and verify the implemented slice against production ChatGPT Web.
+
+Required smoke checks:
+- extension loads;
+- Worker Project registration persists;
+- assistant-generated `research-task/v1` is detected on the real ChatGPT DOM;
+- inline **Send to Worker** mounts on the exact Task block;
+- clicking it reaches `TASK_VALIDATED`;
+- browser page refresh preserves the active relay;
+- clicking the same Task again is idempotent and reports the existing relay.
+
+If any smoke check fails, stop feature expansion, fix the live compatibility issue, rerun CI, and repeat the smoke test.
+
+**2026-09-19 live result:** PASS on Edge for `RR-SMOKE-20260918-002`. The test exposed and fixed production DOM compatibility gaps around nested/streamed code blocks before Stage 4E began.
+
 ### 4E — Worker registration + open path
-- `workerEntryUrl`
-- tab coordination
-- adapter health
-- Fresh Chat proof
-- recovery state
+Implement one bounded increment at a time and live-test each increment before continuing:
+- `workerEntryUrl` validation;
+- tab coordination;
+- adapter health;
+- Worker Project open/focus;
+- Fresh Chat action;
+- Fresh Chat proof;
+- `NEEDS_USER_NEW_CHAT` recovery.
 
 ### 4F — Task staging
-- composer detection
-- exact YAML staging
-- human confirmation
-- posted-task verification
+Continue the same implement -> CI -> live-test loop:
+- composer detection;
+- non-empty composer guard;
+- exact YAML staging;
+- human confirmation;
+- posted-task verification.
 
-At this point the first milestone is complete:
+At this point the first milestone is complete only after a real browser test passes:
 
 ```text
 Master -> Worker stable
@@ -1184,20 +1205,24 @@ Master -> Worker stable
 Only then continue:
 
 ### 4G — Result return
-- result detection
-- task ID gate
-- Master reopen/focus
-- result staging
-- posted-result verification
+- result detection;
+- task ID gate;
+- Master reopen/focus;
+- result staging;
+- posted-result verification;
+- live round-trip verification before moving on.
 
 ### 4H — Diagnostics/recovery polish
-- popup Resume/Cancel
-- error surfaces
-- diagnostics export
-- history cap
+- popup Resume/Cancel;
+- error surfaces;
+- diagnostics export;
+- history cap.
 
-### Stage 5 — Live Edge/Chrome E2E
-Run B1-B11.
+A minimal Cancel control MAY be pulled forward before 4E when required for repeatable live testing.
+
+### Stage 5 — Final live Edge/Chrome regression
+Stage 5 is the full regression gate, not the first real-browser test.
+Run B1-B11 after the individual Stage 4 slices have already passed their targeted live checks.
 
 ### Stage 6
 Modify Skill/docs only if real Bridge testing proves a Skill-side change is required.
