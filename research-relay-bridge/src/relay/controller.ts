@@ -144,6 +144,40 @@ export async function beginWorkerOpening(
       lastError: undefined,
     }
 
+    delete relay.workerObservedUrl
+    delete relay.workerAdapterVersion
+    delete relay.workerContextVerifiedAt
+
+    await setActiveRelay(relay)
+    return { ok: true, relay }
+  })
+}
+
+export async function confirmWorkerContext(params: {
+  observedUrl: string
+  adapterVersion: 1
+}): Promise<BeginWorkerOpeningResult> {
+  return serialize(async () => {
+    const existing = await getActiveRelay()
+
+    if (!existing || isTerminalState(existing.state)) {
+      return { ok: false, error: 'NO_ACTIVE_RELAY' }
+    }
+
+    if (existing.state !== 'WORKER_OPENING') {
+      return { ok: false, error: 'INVALID_RELAY_STATE' }
+    }
+
+    const now = new Date().toISOString()
+    const relay: ActiveRelay = {
+      ...existing,
+      workerObservedUrl: params.observedUrl,
+      workerAdapterVersion: params.adapterVersion,
+      workerContextVerifiedAt: now,
+      updatedAt: now,
+      lastError: undefined,
+    }
+
     await setActiveRelay(relay)
     return { ok: true, relay }
   })
@@ -160,6 +194,27 @@ export async function failWorkerOpening(message: string): Promise<void> {
       lastError: {
         code: 'WORKER_OPEN_FAILED',
         stage: 'WORKER_OPENING',
+        message,
+        recoverable: true,
+        occurredAt,
+      },
+    }
+
+    await setActiveRelay(relay)
+  })
+}
+
+export async function failWorkerAdapter(message: string): Promise<void> {
+  await serialize(async () => {
+    const existing = await getActiveRelay()
+    if (!existing || existing.state !== 'WORKER_OPENING') return
+
+    const occurredAt = new Date().toISOString()
+    const relay: ActiveRelay = {
+      ...transitionRelay(existing, 'ERROR_RECOVERABLE', occurredAt),
+      lastError: {
+        code: 'ADAPTER_UNHEALTHY',
+        stage: 'ADAPTER',
         message,
         recoverable: true,
         occurredAt,

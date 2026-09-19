@@ -1,6 +1,10 @@
 import { browser, type Browser } from 'wxt/browser'
 import { defineBackground } from 'wxt/utils/define-background'
 import {
+  probeWorkerContextWithRetry,
+  WORKER_CONTEXT_PROBE_TYPE,
+} from '../src/adapters/chatgpt/worker-context'
+import {
   bridgeMessageSchema,
   isApprovedChatGptUrl,
 } from '../src/messaging/messages'
@@ -8,6 +12,8 @@ import { selectWorkerTab } from '../src/navigation/worker-tabs'
 import {
   beginWorkerOpening,
   cancelRelay,
+  confirmWorkerContext,
+  failWorkerAdapter,
   failWorkerOpening,
   startRelay,
 } from '../src/relay/controller'
@@ -69,6 +75,19 @@ async function openOrFocusWorkerProject(
   return { tabId: created.id, action: 'opened' }
 }
 
+async function verifyWorkerAdapterAndContext(
+  tabId: number,
+  workerEntryUrl: string,
+) {
+  return probeWorkerContextWithRetry({
+    expectedWorkerEntryUrl: workerEntryUrl,
+    probe: () =>
+      browser.tabs.sendMessage(tabId, {
+        type: WORKER_CONTEXT_PROBE_TYPE,
+      }),
+  })
+}
+
 async function startRelayAndOpenWorker(params: {
   rawTask: string
   masterUrl: string
@@ -95,18 +114,14 @@ async function startRelayAndOpenWorker(params: {
     return { ok: false, error: 'WORKER_OPEN_FAILED' }
   }
 
+  let navigation: { tabId: number; action: 'opened' | 'focused' }
+
   try {
-    const navigation = await openOrFocusWorkerProject(opening.relay)
+    navigation = await openOrFocusWorkerProject(opening.relay)
     const persisted = await beginWorkerOpening(navigation.tabId)
 
     if (!persisted.ok) {
       throw new Error('Could not persist Worker tab hint')
-    }
-
-    return {
-      ...started,
-      state: persisted.relay.state,
-      workerAction: navigation.action,
     }
   } catch (error) {
     const message =
@@ -117,6 +132,42 @@ async function startRelayAndOpenWorker(params: {
       error: 'WORKER_OPEN_FAILED',
       taskId: started.taskId,
     }
+  }
+
+  const context = await verifyWorkerAdapterAndContext(
+    navigation.tabId,
+    opening.relay.workerEntryUrl,
+  )
+
+  if (!context.ok) {
+    await failWorkerAdapter(context.reason)
+    return {
+      ok: false,
+      error: 'ADAPTER_UNHEALTHY',
+      taskId: started.taskId,
+    }
+  }
+
+  const confirmed = await confirmWorkerContext({
+    observedUrl: context.observedUrl,
+    adapterVersion: context.adapterVersion,
+  })
+
+  if (!confirmed.ok) {
+    await failWorkerAdapter('Could not persist Worker adapter/context proof')
+    return {
+      ok: false,
+      error: 'ADAPTER_UNHEALTHY',
+      taskId: started.taskId,
+    }
+  }
+
+  return {
+    ...started,
+    state: confirmed.relay.state,
+    workerAction: navigation.action,
+    workerContextVerified: true,
+    workerContextProbeAttempts: context.attempts,
   }
 }
 

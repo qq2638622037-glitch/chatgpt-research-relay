@@ -1,5 +1,11 @@
+import { browser } from 'wxt/browser'
 import { defineContentScript } from 'wxt/utils/define-content-script'
 import { findProtocolCandidates } from '../src/adapters/chatgpt/protocol-blocks'
+import {
+  WORKER_ADAPTER_VERSION,
+  workerContextProbeRequestSchema,
+  type WorkerContextProbeResponse,
+} from '../src/adapters/chatgpt/worker-context'
 import { mountTaskControl } from '../src/ui/inline-controls'
 
 const DEBOUNCE_MS = 120
@@ -10,6 +16,23 @@ export default defineContentScript({
   main() {
     const pendingRoots = new Set<ParentNode>()
     let timer: ReturnType<typeof setTimeout> | undefined
+
+    const handleMessage = (message: unknown) => {
+      const parsed = workerContextProbeRequestSchema.safeParse(message)
+      if (!parsed.success) return undefined
+
+      const response: WorkerContextProbeResponse = {
+        ok: true,
+        adapter: 'chatgpt',
+        adapterVersion: WORKER_ADAPTER_VERSION,
+        observedUrl: window.location.href,
+        readyState: document.readyState as 'interactive' | 'complete',
+      }
+
+      return response
+    }
+
+    browser.runtime.onMessage.addListener(handleMessage)
 
     const scan = (root: ParentNode) => {
       for (const candidate of findProtocolCandidates(root)) {
@@ -63,6 +86,7 @@ export default defineContentScript({
     window.addEventListener(
       'pagehide',
       () => {
+        browser.runtime.onMessage.removeListener(handleMessage)
         observer.disconnect()
         if (timer) clearTimeout(timer)
       },

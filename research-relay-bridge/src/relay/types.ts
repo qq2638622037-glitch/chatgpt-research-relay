@@ -70,6 +70,9 @@ export interface ActiveRelay {
   updatedAt: string
   masterTabIdHint?: number
   workerTabIdHint?: number
+  workerObservedUrl?: string
+  workerAdapterVersion?: 1
+  workerContextVerifiedAt?: string
   lastError?: RelayError
 }
 

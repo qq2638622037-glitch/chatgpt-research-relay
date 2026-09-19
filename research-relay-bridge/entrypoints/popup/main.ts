@@ -11,6 +11,13 @@ type GetStateResponse =
       activeRelay: {
         taskId: string
         state: string
+        workerContextVerifiedAt?: string
+        workerObservedUrl?: string
+        workerAdapterVersion?: number
+        lastError?: {
+          code: string
+          message: string
+        }
       } | null
     }
   | { ok: false; error: string }
@@ -37,7 +44,16 @@ function renderStatus(response: GetStateResponse) {
     ? `Active relay: ${response.activeRelay.taskId} · ${response.activeRelay.state}`
     : 'No active relay'
 
-  statusEl.textContent = `${worker}\n${relay}`
+  let workerContext = ''
+  if (response.activeRelay?.workerContextVerifiedAt) {
+    workerContext = '\nWorker adapter/context: verified'
+  } else if (response.activeRelay?.lastError?.code === 'ADAPTER_UNHEALTHY') {
+    workerContext = `\nWorker adapter/context: blocked · ${response.activeRelay.lastError.code}`
+  } else if (response.activeRelay?.state === 'WORKER_OPENING') {
+    workerContext = '\nWorker adapter/context: pending'
+  }
+
+  statusEl.textContent = `${worker}\n${relay}${workerContext}`
 }
 
 async function refresh() {
@@ -69,7 +85,6 @@ setWorkerButton?.addEventListener('click', async () => {
 })
 
 void refresh()
-
 
 cancelRelayButton?.addEventListener('click', async () => {
   if (statusEl) statusEl.textContent = 'Cancelling active relay…'
