@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import {
   InvalidRelayTransitionError,
+  isTerminalState,
   transitionRelay,
 } from '../src/relay/fsm'
-import type { ActiveRelay } from '../src/relay/types'
+import { RELAY_STATES, type ActiveRelay } from '../src/relay/types'
 
 function makeRelay(): ActiveRelay {
   return {
@@ -54,5 +55,16 @@ describe('relay FSM', () => {
     relay = transitionRelay(relay, 'NEEDS_USER_NEW_CHAT')
     relay = transitionRelay(relay, 'WORKER_READY')
     expect(relay.state).toBe('WORKER_READY')
+  })
+
+  it('allows cancellation from every non-terminal state', () => {
+    for (const state of RELAY_STATES.filter((state) => !isTerminalState(state))) {
+      const relay: ActiveRelay = {
+        ...makeRelay(),
+        state,
+      }
+
+      expect(transitionRelay(relay, 'CANCELLED').state).toBe('CANCELLED')
+    }
   })
 })
