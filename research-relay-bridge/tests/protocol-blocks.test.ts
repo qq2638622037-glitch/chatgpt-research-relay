@@ -112,7 +112,7 @@ describe('ChatGPT protocol block detection', () => {
 
   it('reports a malformed candidate as invalid', () => {
     document.body.innerHTML =
-      '<pre><code>protocol: research-task/v1\\ntask_id: RR-BAD</code></pre>'
+      '<pre><code>protocol: research-task/v1\ntask_id: RR-BAD</code></pre>'
 
     const found = findProtocolCandidates(document)
     expect(found).toHaveLength(1)
