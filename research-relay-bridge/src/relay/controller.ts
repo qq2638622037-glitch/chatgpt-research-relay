@@ -6,7 +6,7 @@ import {
   getBridgeConfig,
   setActiveRelay,
 } from '../storage/store'
-import { isTerminalState } from './fsm'
+import { isTerminalState, transitionRelay } from './fsm'
 import type { ActiveRelay } from './types'
 
 let writeQueue: Promise<void> = Promise.resolve()
@@ -105,6 +105,68 @@ export async function startRelay(params: {
       state: relay.state,
       alreadyActive: false,
     }
+  })
+}
+
+export type BeginWorkerOpeningResult =
+  | { ok: true; relay: ActiveRelay }
+  | { ok: false; error: 'NO_ACTIVE_RELAY' | 'INVALID_RELAY_STATE' }
+
+export async function beginWorkerOpening(
+  workerTabIdHint?: number,
+): Promise<BeginWorkerOpeningResult> {
+  return serialize(async () => {
+    const existing = await getActiveRelay()
+
+    if (!existing || isTerminalState(existing.state)) {
+      return { ok: false, error: 'NO_ACTIVE_RELAY' }
+    }
+
+    if (
+      existing.state !== 'TASK_VALIDATED' &&
+      existing.state !== 'WORKER_OPENING' &&
+      existing.state !== 'ERROR_RECOVERABLE'
+    ) {
+      return { ok: false, error: 'INVALID_RELAY_STATE' }
+    }
+
+    const next =
+      existing.state === 'WORKER_OPENING'
+        ? {
+            ...existing,
+            updatedAt: new Date().toISOString(),
+          }
+        : transitionRelay(existing, 'WORKER_OPENING')
+
+    const relay: ActiveRelay = {
+      ...next,
+      ...(workerTabIdHint == null ? {} : { workerTabIdHint }),
+      lastError: undefined,
+    }
+
+    await setActiveRelay(relay)
+    return { ok: true, relay }
+  })
+}
+
+export async function failWorkerOpening(message: string): Promise<void> {
+  await serialize(async () => {
+    const existing = await getActiveRelay()
+    if (!existing || existing.state !== 'WORKER_OPENING') return
+
+    const occurredAt = new Date().toISOString()
+    const relay: ActiveRelay = {
+      ...transitionRelay(existing, 'ERROR_RECOVERABLE', occurredAt),
+      lastError: {
+        code: 'WORKER_OPEN_FAILED',
+        stage: 'WORKER_OPENING',
+        message,
+        recoverable: true,
+        occurredAt,
+      },
+    }
+
+    await setActiveRelay(relay)
   })
 }
 
